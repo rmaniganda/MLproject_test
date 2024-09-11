@@ -1,6 +1,7 @@
 import sys
-import logging
 import os
+from src.logger import logging
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 def error_message_detail(error, error_detail: sys):
     _, _, exc_tb = error_detail.exc_info()
@@ -17,24 +18,40 @@ class CustomException(Exception):
         return self.error_message
 
 if __name__ == "__main__":
-    log_file_path = os.path.join(os.getcwd(), "error.log")
-    print(f"Log file path: {log_file_path}")  # Debugging line
+    try:
+        log_file_path = os.path.join(os.getcwd(), "error.log")
+        print(f"Log file path: {log_file_path}")
 
-    logging.basicConfig(
-        filename=log_file_path,
-        format="[%(asctime)s] %(lineno)d %(name)s - %(levelname)s - %(message)s",
-        level=logging.ERROR
-    )
+        # Clear any previous handlers before adding a new one
+        for handler in logging.root.handlers[:]:
+            logging.root.removeHandler(handler)
 
-    # Add a console handler to see log output in the terminal as well
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.ERROR)
-    formatter = logging.Formatter("[%(asctime)s] %(lineno)d %(name)s - %(levelname)s - %(message)s")
-    console_handler.setFormatter(formatter)
-    logging.getLogger().addHandler(console_handler)
+        # Try logging configuration
+        logging.basicConfig(
+            filename=log_file_path,
+            filemode='w',  # Overwrite the log file each time
+            format="[%(asctime)s] %(lineno)d %(name)s - %(levelname)s - %(message)s",
+            level=logging.ERROR
+        )
+
+        # Add a console handler to see log output in the terminal as well
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(logging.ERROR)
+        formatter = logging.Formatter("[%(asctime)s] %(lineno)d %(name)s - %(levelname)s - %(message)s")
+        console_handler.setFormatter(formatter)
+        logging.getLogger().addHandler(console_handler)
+
+        # Test logging functionality
+        logging.error("Test log message")
+
+        a = 1 / 0  # This will raise a ZeroDivisionError
+
+    except Exception as e:
+        print(f"Error while setting up logging: {e}")
+        raise
 
     try:
         a = 1 / 0  # This will raise a ZeroDivisionError
     except ZeroDivisionError as e:
-        logging.error("Divide by Zero")
+        logging.error("Divide by Zero")  # Log error message
         raise CustomException(str(e), sys)  # Raise the CustomException with details
